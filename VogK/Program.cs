@@ -16,7 +16,15 @@ namespace VogK
                 Console.WriteLine($"Fødselsdato: {birthDay:yyyy-MM-dd}");
 
                 var dto = new DTO();
-                dto.AgeCalc(birthDay);
+                var result = dto.AgeCalc(birthDay);
+
+                dynamic r = result;
+                Console.WriteLine($"Du er {r.Age} år gammel.");
+                Console.WriteLine($"Der er {r.YearsUntilRetirement} år til pension.");
+                if (r.Reminder)
+                {
+                    Console.WriteLine("Husk at tjekke din pensionsopsparing.");
+                }
             }
             catch (ArgumentOutOfRangeException)
             {
@@ -38,5 +46,7 @@ namespace VogK
     }
 }
 
-var app = new VogK.Program();
-app.Run(args);
+//VogK.Program program = new();
+
+//VogK.Program app = program;
+//app.Run(args);
