@@ -6,22 +6,22 @@ namespace VogK
     {
         public void Run(string[] args)
         {
-            int day = ReadInt("Indtast din fødselsdag (dag): ");
-            int month = ReadInt("Indtast din fødselsmåned (måned): ");
-            int year = ReadInt("Indtast dit fødselsår (år): ");
+            var dto = new DTO();
+
+            int day = dto.ReadInt("Indtast din fødselsdag (dag): ");
+            int month = dto.ReadInt("Indtast din fødselsmåned (måned): ");
+            int year = dto.ReadInt("Indtast dit fødselsår (år): ");
 
             try
             {
                 DateOnly birthDay = new DateOnly(year, month, day);
                 Console.WriteLine($"Fødselsdato: {birthDay:yyyy-MM-dd}");
 
-                var dto = new DTO();
-                var result = dto.AgeCalc(birthDay);
+                Return result = dto.AgeCalc(birthDay);
 
-                dynamic r = result;
-                Console.WriteLine($"Du er {r.Age} år gammel.");
-                Console.WriteLine($"Der er {r.YearsUntilRetirement} år til pension.");
-                if (r.Reminder)
+                Console.WriteLine($"Du er {result.Age} år gammel.");
+                Console.WriteLine($"Du har {result.YearsUntilRetirement} år til pension.");
+                if (result.Reminder)
                 {
                     Console.WriteLine("Husk at tjekke din pensionsopsparing.");
                 }
@@ -32,21 +32,5 @@ namespace VogK
             }
         }
 
-        private int ReadInt(string prompt)
-        {
-            while (true)
-            {
-                Console.Write(prompt);
-                var input = Console.ReadLine();
-                if (int.TryParse(input, out int value))
-                    return value;
-                Console.WriteLine("Ugyldigt tal, prøv igen.");
-            }
-        }
     }
 }
-
-//VogK.Program program = new();
-
-//VogK.Program app = program;
-//app.Run(args);
