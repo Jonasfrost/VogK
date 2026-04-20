@@ -2,17 +2,18 @@
 
 namespace VogK
 {
+
     internal class Return
     {
         public int Age { get; init; }
-        public int YearsUntilRetirement { get; init; }
+        public int YearsUntilRetirement { get; set; }
         public bool Reminder { get; init; }
 
       
     }
     public class Retirement
     {
-        public string Age { get; set; }
+        public int age { get; set; }
     }
 
     public class Root
