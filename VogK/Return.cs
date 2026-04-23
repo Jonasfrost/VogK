@@ -1,24 +1,18 @@
-﻿using System;
+﻿
 
-namespace VogK
+internal class Return
 {
-    internal class Return
-    {
-        public int Age { get; init; }
-        public int YearsUntilRetirement { get; init; }
-        public bool Reminder { get; init; }
+    public Age Age { get; init; }
+    public YearsUntilRetirement YearsUntilRetirement { get; set; }
+    public bool Reminder { get; init; }
 
-      
-    }
-    public class Retirement
-    {
-        public string Age { get; set; }
-    }
+}
+internal class Retirement
+{
+    public Age Age { get; set; }
+}
 
-    public class Root
-    {
-        public Retirement RetirementAge { get; set; }
-    }
-
-
+internal class Root
+{
+    public Retirement RetirementAge { get; set; }
 }
