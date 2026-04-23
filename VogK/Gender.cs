@@ -2,11 +2,9 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace VogK
+
+public enum Gender
 {
-    public enum Gender
-    {
-        M,
-        F
-    }
+    M,
+    F
 }

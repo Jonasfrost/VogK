@@ -1,15 +1,12 @@
-﻿
-
-using VogK;
-
-internal class DTO
+﻿internal class DTO
 {
-    string projectFolder = Directory.GetParent(Environment.CurrentDirectory).Parent.Parent.FullName;
-
-    string filePath = Path.Combine(Directory.GetParent(Environment.CurrentDirectory).Parent.Parent.FullName, "users.txt");
+    string filePath = Path.Combine(
+        Directory.GetParent(Environment.CurrentDirectory).Parent.Parent.FullName,
+        "users.txt");
 
     public const int Fem = 5;
 
+    // -------- INPUT --------
 
     public string ReadName(string prompt)
     {
@@ -24,15 +21,35 @@ internal class DTO
             Console.Write(prompt);
             string input = (Console.ReadLine() ?? "").Trim().ToUpper();
 
-            if (input == "M")
-                return Gender.M;
+            if (input == "M") return Gender.M;
+            if (input == "F") return Gender.F;
 
-            if (input == "F")
-                return Gender.F;
-
-            Console.WriteLine("Ugyldigt input. Skriv M eller F.");
+            Console.WriteLine("Ugyldigt input.");
         }
     }
+
+    public Department ReadDepartment(string prompt)
+    {
+        while (true)
+        {
+            Console.WriteLine(prompt);
+            Console.WriteLine("1: Software Development");
+            Console.WriteLine("2: Administration");
+            Console.WriteLine("3: Service and Support");
+
+            string input = Console.ReadLine() ?? "";
+
+            switch (input)
+            {
+                case "1": return Department.Software_Development;
+                case "2": return Department.Administration;
+                case "3": return Department.Service_and_Support;
+            }
+
+            Console.WriteLine("Ugyldigt valg.");
+        }
+    }
+
     public int ReadInt(string prompt)
     {
         while (true)
@@ -45,17 +62,41 @@ internal class DTO
         }
     }
 
-    public bool ReadBool(string prompt)
+    public DateOnly ReadBirthDate()
     {
-        while (true)
-        {
-            Console.Write(prompt + " (true/false): ");
-            if (bool.TryParse(Console.ReadLine(), out bool value))
-                return value;
+        int day = ReadInt("Dag: ");
+        int month = ReadInt("Måned: ");
+        int year = ReadInt("År: ");
 
-            Console.WriteLine("Ugyldigt input");
-        }
+        return new DateOnly(year, month, day);
     }
+
+    // -------- LOGIK --------
+
+    public Return AgeCalc(DateOnly birthDay)
+    {
+        DateOnly today = DateOnly.FromDateTime(DateTime.Now);
+        int ageVal = today.Year - birthDay.Year;
+
+        if (today < birthDay.AddYears(ageVal))
+            ageVal--;
+
+        Age age = new(ageVal);
+
+        int retirementAge = 67;
+        int yearsLeft = retirementAge - age.age;
+
+        bool reminder = yearsLeft <= Fem;
+
+        return new Return
+        {
+            Age = age,
+            YearsUntilRetirement = new YearsUntilRetirement(yearsLeft),
+            Reminder = reminder
+        };
+    }
+
+    // -------- FIL --------
 
     public List<User> LoadUsers()
     {
@@ -68,153 +109,142 @@ internal class DTO
             {
                 var p = line.Split('|');
 
-                if (p.Length != 5) return null;
-                if (!Enum.TryParse<Gender>(p[2], out var gender))
-                    return null;
+                if (p.Length != 6) return null;
+
                 if (!int.TryParse(p[3], out int years)) return null;
                 if (!bool.TryParse(p[4], out bool reminder)) return null;
+                if (!Enum.TryParse<Department>(p[5], out var dep)) return null;
 
                 return new User
                 {
                     Name = p[0],
                     Surname = p[1],
                     Gender = p[2],
-                    Age = new Age(int.Parse(p[3])),
+                    Age = new Age(years),
                     YearsUntilRetirement = years,
-                    Reminder = reminder
+                    Reminder = reminder,
+                    Department = dep
                 };
             })
             .Where(u => u != null)
             .ToList()!;
     }
 
-    public DateOnly ReadBirthDate()
+    public void SaveUsers(List<User> users)
     {
-        int day = ReadInt("Indtast fødselsdag (1-31): ");
-        int month = ReadInt("Indtast fødselsmåned (1-12): ");
-        int year = ReadInt("Indtast fødselsår: ");
-
-        return new DateOnly(year, month, day);
-
-
-    }
-    public Return AgeCalc(DateOnly birthDay)
-    {
-        DateOnly today = DateOnly.FromDateTime(DateTime.Now);
-        Age age = new(today.Year - birthDay.Year);
-        if (today < birthDay.AddYears(age.age))
-            age = new Age(age.age - 1);
-
-        string jsonFile = File.ReadAllText("AppSettings.json");
-        Root data = JsonSerializer.Deserialize<Root>(jsonFile);
-
-        Age retirementAge = new Age(data.RetirementAge.Age.age);
-
-        YearsUntilRetirement yearsUntilRetirement = new(retirementAge.age - age.age);
-        bool reminder = false;
-        if (yearsUntilRetirement.yearsUntilRetirement <= 5)
-        {
-            reminder = true;
-        }
-        return new Return
-        {
-            Age = age,
-            YearsUntilRetirement = yearsUntilRetirement,
-            Reminder = reminder
-        };
+        File.WriteAllLines(filePath,
+            users.Select(u =>
+                $"{u.Name}|{u.Surname}|{u.Gender}|{u.YearsUntilRetirement}|{u.Reminder}|{u.Department}"));
     }
 
-    public void CreateUser(string name, string surname, Gender gender, Return age)
-    {
+    // -------- CREATE --------
 
-        
+    public void CreateUserFlow()
+    {
+        string name = ReadName("Fornavn: ");
+        string surname = ReadName("Efternavn: ");
+        Gender gender = ReadGender("Køn (M/F): ");
+        Department dep = ReadDepartment("Vælg afdeling:");
+
+        DateOnly birth = ReadBirthDate();
+        Return r = AgeCalc(birth);
+
         var users = LoadUsers();
 
-        var newUser = new User
+        users.Add(new User
         {
             Name = name,
             Surname = surname,
             Gender = gender.ToString(),
-            Age = age.Age,
+            Age = r.Age,
+            YearsUntilRetirement = r.YearsUntilRetirement.yearsUntilRetirement,
+            Reminder = r.Reminder,
+            Department = dep
+        });
 
-            Reminder = age.Reminder
-        };
+        SaveUsers(users);
 
-
-        users.Add(newUser);
-
-        File.WriteAllLines(filePath,
-            users.Select(u =>
-                $"{u.Name}|{u.Surname}|{u.Gender}|{u.Age.age}|{u.Reminder}"));
-
-        Console.WriteLine("Bruger gemt!");
+        Console.WriteLine("Bruger oprettet!");
     }
+
+    // -------- VIS --------
 
     public void ShowUsers()
     {
-        if (!File.Exists(filePath))
+        var users = LoadUsers();
+
+        Console.WriteLine("\n=== BRUGERE ===");
+
+        foreach (var u in users)
+        {
+            Console.WriteLine($"{u.Name} {u.Surname}, {u.Gender}, {u.Age.age} år, {u.Department.ToString().Replace("_", " ")}, Reminder: {u.Reminder}");
+        }
+    }
+
+    public void ShowNearRetirement()
+    {
+        var users = LoadUsers();
+
+        double[,] salary =
+        {
+            {35000, 40000, 80000, 43750},
+            {30000, 34000, 68000, 37500},
+            {28000, 32000, 64000, 35000}
+        };
+
+        var result = users.Where(u => u.Reminder).ToList();
+
+        Console.WriteLine("\n=== TÆT PÅ PENSION ===");
+
+        foreach (var u in result)
+        {
+            int row = (int)u.Department;
+
+            double bonus = u.Gender == "M"
+                ? salary[row, 2]
+                : salary[row, 3];
+
+            Console.WriteLine($"{u.Surname}, {u.Name} - {u.Department.ToString().Replace("_", " ")} - Bonus: {bonus}");
+        }
+    }
+    public void ShowByUserName()
+    {
+        var users = LoadUsers();
+
+        Console.Write("Indtast fornavn: ");
+        string input = (Console.ReadLine() ?? "").ToLower();
+
+        var result = users
+            .Where(u => u.Name.ToLower().Contains(input))
+            .ToList();
+
+        if (result.Count == 0)
         {
             Console.WriteLine("Ingen brugere fundet.");
             return;
         }
 
-        var lines = File.ReadAllLines(filePath);
-
-        Console.WriteLine("\n=== BRUGERE ===");
-
-        foreach (var line in lines)
-        {
-            var p = line.Split('|');
-
-            if (p.Length < 5)
-                continue;
-
-            Console.WriteLine($"{p[0]} {p[1]}, {p[2]}, {p[3]} år, Påmindelse: {p[4]}");
-        }
-    }
-
-    public void ShowSortedBySurname()
-    {
-        var users = LoadUsers();
-
-        var sortedUsers = users
-            .OrderBy(u => u.Surname)
-            .ToList();
-
-        Console.WriteLine("\n=== SORTERET ===");
-
-        foreach (var u in sortedUsers)
-        {
-            Console.WriteLine($"{u.Surname}, {u.Name}");
-        }
-    }
-    public void ShowNearRetirement()
-    {
-        var users = LoadUsers();
-
-        var result = users
-            .Where(u => u.Reminder == true)
-            .OrderBy(u => u.Surname)
-            .ToList();
-
-        Console.WriteLine("\n=== TÆT PÅ PENSION (<= 5 ÅR) ===");
+        Console.WriteLine("\n=== RESULTAT ===");
 
         foreach (var u in result)
         {
-            Console.WriteLine($"{u.Surname}, {u.Name} - {u.YearsUntilRetirement} år tilbage");
+            Console.WriteLine($"{u.Name} {u.Surname}, {u.Gender}, {u.Age.age} år, {u.Department.ToString().Replace("_", " ")}");
         }
     }
-    public void CreateUserFlow(DTO dto)
+    public void ShowBySurname()
     {
-        string name = dto.ReadName("Indtast dit fornavn: ");
-        string surname = dto.ReadName("Indtast dit efternavn: ");
-        Gender gender = dto.ReadGender("Indtast dit køn (M/F): ");
+        var users = LoadUsers();
 
-        DateOnly birthDate = dto.ReadBirthDate();
-        Return age = dto.AgeCalc(birthDate);
+        var sorted = users
+            .OrderBy(u => u.Surname)
+            .ThenBy(u => u.Name) // bonus: hvis samme efternavn
+            .ToList();
 
-        dto.CreateUser(name, surname, gender, age);
+        Console.WriteLine("\n=== SORTERET EFTER EFTERNAVN ===");
 
-        Console.WriteLine("Bruger oprettet!");
+        foreach (var u in sorted)
+        {
+            Console.WriteLine($"{u.Surname}, {u.Name} - {u.Department.ToString().Replace("_", " ")}");
+        }
     }
 }

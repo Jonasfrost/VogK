@@ -1,10 +1,1 @@
-Jonas|Frost|M|17|False
-Lone|Frost|F|49|False
-Simon|EEEE|M|17|False
-Freja|hen|F|68|True
-Hendrik|Debbess|M|68|True
-Lucas|Rasmussen|M|26|True
-Emily|Stone|F|36|True
-Lars|Mand|F|39|True
-Viking|Viking|F|25|True
-GUD|JA|F|8|True
+

@@ -16,5 +16,3 @@ internal class Root
 {
     public Retirement RetirementAge { get; set; }
 }
-
-
